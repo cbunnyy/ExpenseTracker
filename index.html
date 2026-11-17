@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expense Tracker</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+            padding: 30px 15px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #777;
+            margin-bottom: 30px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #00000010;
+        }
+
+        .card p {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card h2 {
+            font-size: 22px;
+        }
+
+        .form-box, .history {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        button {
+            background: #635bdb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #5048bd;
+        }
+
+        .transaction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction small {
+            color: #777;
+        }
+
+        .delete-btn {
+            width: auto;
+            margin: 0;
+            padding: 7px 12px;
+            background: #e74c3c;
+        }
+
+        .income {
+            color: #159957;
+        }
+
+        .expense {
+            color: #e74c3c;
+        }
+
+        .empty {
+            color: #888;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 550px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Expense Tracker</h1>
+    <p class="subtitle">Manage your money, one step at a time.</p>
+
+    <div class="summary">
+
+        <div class="card">
+            <p>Total Balance</p>
+            <h2 id="balance">₹0</h2>
+        </div>
+
+        <div class="card">
+            <p>Total Income</p>
+            <h2 id="income">₹0</h2>
+        </div>
+
+        <div class="card">
+            <p>Total Expenses</p>
+            <h2 id="expense">₹0</h2>
+        </div>
+
+    </div>
+
+    <div class="form-box">
+
+        <h3>Add Transaction</h3>
+
+        <form id="transaction-form">
+
+            <input
+                type="text"
+                id="description"
+                placeholder="Enter description"
+                required
+            >
+
+            <input
+                type="number"
+                id="amount"
+                placeholder="Enter amount (₹)"
+                min="0.01"
+                step="0.01"
+                required
+            >
+
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+
+            <select id="category">
+                <option value="Food">Food</option>
+                <option value="Education">Education</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Travel">Travel</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <button type="submit">Add Transaction</button>
+
+        </form>
+
+    </div>
+
+    <div class="history">
+
+        <h3>Transaction History</h3>
+
+        <div id="transaction-list">
+            <p class="empty">No transactions yet.</p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    let transactions = JSON.parse(
+        localStorage.getItem("transactions")
+    ) || [];
+
+    const form = document.getElementById("transaction-form");
+    const list = document.getElementById("transaction-list");
+
+    function saveData() {
+        localStorage.setItem(
+            "transactions",
+            JSON.stringify(transactions)
+        );
+    }
+
+    function updateUI() {
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        transactions.forEach(transaction => {
+
+            if (transaction.type === "income") {
+                totalIncome += transaction.amount;
+            } else {
+                totalExpense += transaction.amount;
+            }
+
+        });
+
+        const balance = totalIncome - totalExpense;
+
+        document.getElementById("balance").textContent =
+            "₹" + balance.toFixed(2);
+
+        document.getElementById("income").textContent =
+            "₹" + totalIncome.toFixed(2);
+
+        document.getElementById("expense").textContent =
+            "₹" + totalExpense.toFixed(2);
+
+        renderTransactions();
+    }
+
+    function renderTransactions() {
+
+        list.innerHTML = "";
+
+        if (transactions.length === 0) {
+            list.innerHTML =
+                '<p class="empty">No transactions yet.</p>';
+            return;
+        }
+
+        transactions.forEach(transaction => {
+
+            const item = document.createElement("div");
+            item.className = "transaction";
+
+            const details = document.createElement("div");
+
+            const title = document.createElement("strong");
+            title.textContent = transaction.description;
+
+            const info = document.createElement("small");
+            info.textContent =
+                transaction.category + " • " + transaction.date;
+
+            details.appendChild(title);
+            details.appendChild(document.createElement("br"));
+            details.appendChild(info);
+
+            const right = document.createElement("div");
+
+            const amount = document.createElement("strong");
+            amount.className = transaction.type;
+
+            amount.textContent =
+                (transaction.type === "income" ? "+" : "-") +
+                "₹" + transaction.amount.toFixed(2);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-btn";
+
+            deleteButton.addEventListener("click", () => {
+                deleteTransaction(transaction.id);
+            });
+
+            right.appendChild(amount);
+            right.appendChild(deleteButton);
+
+            item.appendChild(details);
+            item.appendChild(right);
+
+            list.appendChild(item);
+
+        });
+    }
+
+    form.addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const description =
+            document.getElementById("description").value.trim();
+
+        const amount =
+            Number(document.getElementById("amount").value);
+
+        const type =
+            document.getElementById("type").value;
+
+        const category =
+            document.getElementById("category").value;
+
+        if (!description || !Number.isFinite(amount) || amount <= 0) {
+            alert("Please enter valid details.");
+            return;
+        }
+
+        const transaction = {
+
+            id: Date.now() + Math.random(),
+            description: description,
+            amount: amount,
+            type: type,
+            category: category,
+            date: new Date().toLocaleDateString()
+
+        };
+
+        transactions.push(transaction);
+
+        saveData();
+        updateUI();
+
+        form.reset();
+
+    });
+
+    function deleteTransaction(id) {
+
+        transactions = transactions.filter(
+            transaction => transaction.id !== id
+        );
+
+        saveData();
+        updateUI();
+
+    }
+
+    updateUI();
+
+</script>
+
+</body>
+</html>
